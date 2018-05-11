@@ -1,28 +1,31 @@
 import { connect } from "react-redux";
-import { cloneDeep, map, without, head, values, filter } from "lodash";
-import uuid from "uuid/v4";
-import { withInstanceId, Button, IconButton } from "@wordpress/components";
+import { cloneDeep, map, head, filter } from "lodash";
+import { __, sprintf } from "@wordpress/i18n";
+import { withInstanceId, Button } from "@wordpress/components";
 import { Component } from "@wordpress/element";
+
+import { FieldListForm } from "@gcf/fields";
 
 import "./style.scss";
 import QueryModelList from "../query/model-list";
 import { getRecords } from "../../store/selectors";
 
-const AVAILABLE_FIELD_TYPES = [
-  "text",
-  "image",
-  "textarea",
-  "number",
-  "email",
-  "datetime",
-  "date",
-  "time",
-  "free"
-];
 const LOCK_OPTIONS = [
-  { value: "none", label: "None" },
-  { value: "insert", label: "Forbid adding/removing blocks" },
-  { value: "all", label: "Forbid adding/removing and moving blocks" }
+  {
+    value: "none",
+    label: __("None", "gutenberg-custom-fields")
+  },
+  {
+    value: "insert",
+    label: __("Forbid adding/removing blocks", "gutenberg-custom-fields")
+  },
+  {
+    value: "all",
+    label: __(
+      "Forbid adding/removing and moving blocks",
+      "gutenberg-custom-fields"
+    )
+  }
 ];
 
 class TemplateForm extends Component {
@@ -34,7 +37,7 @@ class TemplateForm extends Component {
     this.onChangeTitle = this.onChangeProperty("title");
     this.onChangePostType = this.onChangeProperty("post_type");
     this.onChangeLock = this.onChangeProperty("lock");
-    this.onAddField = this.onAddField.bind(this);
+    this.onChangeFields = this.onChangeFields.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
   }
 
@@ -58,74 +61,15 @@ class TemplateForm extends Component {
     };
   }
 
-  onAddField() {
-    const newField = {
-      id: uuid(),
-      type: "text"
-    };
-
-    this.setState(state => ({
-      editedTemplate: {
-        ...state.editedTemplate,
-        fields: (state.editedTemplate.fields || []).concat([newField])
-      }
-    }));
-  }
-
-  onBlurFieldName(field) {
-    return event => {
-      const value = event.target.value;
-      this.setState(state => {
-        const index = state.editedTemplate.fields.indexOf(field);
-        if (!!field.title) {
-          return;
-        }
-        const newField = {
-          ...field,
-          title: value
-        };
-        const newFields = [...state.editedTemplate.fields];
-        newFields[index] = newField;
-        return {
-          editedTemplate: {
-            ...state.editedTemplate,
-            fields: newFields
-          }
-        };
-      });
-    };
-  }
-
-  onChangeField(field, property) {
-    return event => {
-      const value = event.target.value;
-      this.setState(state => {
-        const index = state.editedTemplate.fields.indexOf(field);
-        const newField = {
-          ...field,
-          [property]: value
-        };
-        const newFields = [...state.editedTemplate.fields];
-        newFields[index] = newField;
-        return {
-          editedTemplate: {
-            ...state.editedTemplate,
-            fields: newFields
-          }
-        };
-      });
-    };
-  }
-
-  onRemoveField(field) {
-    return () => {
-      this.setState(state => ({
+  onChangeFields(fields) {
+    this.setState(state => {
+      return {
         editedTemplate: {
           ...state.editedTemplate,
-          fields: without(state.editedTemplate.fields, field)
+          fields
         }
-      }));
-    };
+      };
+    });
   }
 
   onSubmit(event) {
@@ -138,13 +82,7 @@ class TemplateForm extends Component {
   }
 
   render() {
-    const {
-      instanceId,
-      onCancel,
-      onSubmit,
-      postTypes,
-      isDisabled
-    } = this.props;
+    const { instanceId, onCancel, postTypes, isDisabled } = this.props;
     const { editedTemplate } = this.state;
     const isNew = !editedTemplate.id;
 
@@ -159,12 +97,17 @@ class TemplateForm extends Component {
       >
         <h1>
           {isNew
-            ? "Creating a new Gutenberg custom field template"
-            : `Editing: ${editedTemplate.title}`}
+            ? __("Creating a new GCF template", "gutenberg-custom-fields")
+            : sprintf(
+                __("Editing: %s", "gutenberg-custom-fields"),
+                editedTemplate.title
+              )}
         </h1>
 
         <div className="gcf-template-form__group">
-          <label htmlFor={`template-title-${instanceId}`}>Title</label>
+          <label htmlFor={`template-title-${instanceId}`}>
+            {__("Title", "gutenberg-custom-fields")}
+          </label>
           <input
             type="text"
             id={`template-title-${instanceId}`}
@@ -174,7 +117,9 @@ class TemplateForm extends Component {
         </div>
 
         <div className="gcf-template-form__group">
-          <label htmlFor={`template-post-type-${instanceId}`}>Post Type</label>
+          <label htmlFor={`template-post-type-${instanceId}`}>
+            {__("Post Type", "gutenberg-custom-fields")}
+          </label>
           <select
             id={`template-post-type-${instanceId}`}
             value={editedTemplate.post_type}
@@ -195,7 +140,9 @@ class TemplateForm extends Component {
         </div>
 
         <div className="gcf-template-form__group">
-          <label htmlFor={`template-is-locked-${instanceId}`}>Lock</label>
+          <label htmlFor={`template-is-locked-${instanceId}`}>
+            {__("Lock", "gutenberg-custom-fields")}
+          </label>
           <select
             id={`template-is-locked-${instanceId}`}
             value={editedTemplate.lock || "none"}
@@ -209,84 +156,17 @@ class TemplateForm extends Component {
           </select>
         </div>
 
-        <div className="gcf-template-form__group">
-          <label>Fields</label>
-
-          <div className="gcf-template-form__fields">
-            {map(editedTemplate.fields, field => (
-              <div key={field.id} className="gcf-template-form__field">
-                <IconButton
-                  className="gcf-template-form__remove-field"
-                  icon="no-alt"
-                  onClick={this.onRemoveField(field)}
-                />
-
-                <div>
-                  <label
-                    htmlFor={`template-fields-name-${field.id}-${instanceId}`}
-                  >
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    id={`template-fields-name-${field.id}-${instanceId}`}
-                    value={field.name || ""}
-                    onChange={this.onChangeField(field, "name")}
-                    onBlur={this.onBlurFieldName(field)}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor={`template-fields-title-${field.id}-${instanceId}`}
-                  >
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    id={`template-fields-title-${field.id}-${instanceId}`}
-                    value={field.title || ""}
-                    onChange={this.onChangeField(field, "title")}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor={`template-fields-type-${field.id}-${instanceId}`}
-                  >
-                    Type
-                  </label>
-                  <select
-                    id={`template-fields-type-${field.id}-${instanceId}`}
-                    value={field.type}
-                    onChange={this.onChangeField(field, "type")}
-                  >
-                    {map(AVAILABLE_FIELD_TYPES, fieldType => (
-                      <option key={fieldType} value={fieldType}>
-                        {fieldType}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            ))}
-
-            <IconButton
-              className="gcf-template-form__add-field"
-              icon="insert"
-              onClick={this.onAddField}
-            >
-              Add Field
-            </IconButton>
-          </div>
-        </div>
+        <FieldListForm
+          fields={editedTemplate.fields}
+          onChange={this.onChangeFields}
+        />
 
         <div className="gcf-template-form__footer">
           <Button className="button" onClick={onCancel} disabled={isDisabled}>
-            Cancel
+            {__("Cancel", "gutenberg-custom-fields")}
           </Button>
           <Button type="submit" isPrimary disabled={isDisabled}>
-            Save
+            {__("Save", "gutenberg-custom-fields")}
           </Button>
         </div>
       </form>
@@ -296,4 +176,4 @@ class TemplateForm extends Component {
 
 export default connect(state => ({
   postTypes: getRecords(state, "postTypes")
-}))(TemplateForm);
+}))(withInstanceId(TemplateForm));

@@ -6,9 +6,6 @@ Navigate to the "GCF" admin page, create a new template, select a post type and 
 
 The Gutenberg Editor will be pre-filled with the corresponding post type's template.
 
-### Features
+## Documentation
 
-* Customize the title, the name of the post_meta key and the type of the field.
-* Several fields types available: Text, Textarea, Image, Number, Email and more to come.
-* Based on Gutenberg Native Extensibility APIs (blocks and templates).
-* Templates Lock level.
+Documentation can be found [here](https://youknowriad.github.io/gcf/). If you don't find the answers you're looking for, [submit an issue](https://github.com/youknowriad/gcf/issues).

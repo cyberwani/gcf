@@ -48,6 +48,8 @@ status "Installing dependencies..."
 npm install
 status "Generating build..."
 npm run build
+status "Generating PHP file for wordpress.org to parse translations..."
+npx pot-to-php ./languages/gcf.pot ./languages/gcf-translations.php gutenberg-custom-fields
 
 # Remove any existing zip file
 rm -f gcf.zip
@@ -57,10 +59,8 @@ status "Creating archive..."
 zip -r gcf.zip \
 	gutenberg-custom-fields.php \
 	lib/*.php \
-	scripts/config-app/build/*.{js,map} \
-	scripts/blocks/build/*.{js,map} \
-	scripts/config-app/build/*.css \
-	scripts/blocks/build/*.css \
-	README.md
+	scripts/{fields,config-app,i18n}/build/*.{js,css} \
+	languages/gcf-translations.php \
+	readme.txt
 
 status "Done."
